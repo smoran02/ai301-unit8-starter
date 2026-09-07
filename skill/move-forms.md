@@ -95,10 +95,11 @@ The PR is merged. Draft the short close of the loop:
   deliberately out of scope, name it honestly as a possible follow-up
   issue, without volunteering for it in this message.
 - Nothing else. A merged thread is a finished conversation; the
-  author's record keeping (the round-1 README's Status line and
+  author's record keeping (the contribution story's Status line and
   Maintainer Feedback log, the unit-8 Toolkit entry) happens in the
   course repo, not in the maintainer's thread.
 - In the bracketed author-notes, not in the draft: a second
   contribution is welcome now that the loop is cheap, never required,
-  never graded; `round-template/` in the course repo copies to
-  `round2/` if the author wants the record kept in the same place.
+  never graded; `extra-round-template.md` in the course repo copies
+  to `contribution-story-2.md` if the author wants the record kept
+  in the same place.

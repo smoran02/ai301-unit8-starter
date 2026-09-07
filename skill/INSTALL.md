@@ -168,9 +168,9 @@ latest run, overwritten on each run that drafts (a free
 `NOTHING NEW` answer leaves your draft in place), so the log is the
 history and the files are the working copy. All of it stays on your
 machine: Assignment 5 asks for no monitor output anywhere, and the
-unit-8 Toolkit entry in your round-1 README, in your own words, is
-what the rubric reads. The packaged monitor, self-contained in this
-one folder, is unit-9 portfolio material.
+unit-8 Toolkit entry in your contribution story, in your own words,
+is what the rubric reads. The packaged monitor, self-contained in
+this one folder, is unit-9 portfolio material.
 
 When a draft is worth sending, the motion is two steps, and the file
 you post is never `drafted-move.md` (that file carries the DRAFT
