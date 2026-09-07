@@ -97,9 +97,14 @@ dates are unavailable): an old bot comment from before your work is
 history, not news.
 
 One honest limit: the monitor finds your PR by the branch you are
-standing on. If you know your PR exists and still see `NO PR YET`,
-gh could not map the branch to it; `gh pr checkout <number>` puts you
-on a branch it can map, then run again.
+standing on, in the repository gh resolves from your clone's remotes.
+The report prints that repository on its own line, so read it first
+when you see `NO PR YET` for a PR you know exists. A clone of your
+fork resolves to the fork, where the PR does not live: add the
+repository your PR targets as a remote
+(`git remote add upstream <repo URL>`) and run again. If the
+repository is already right, gh could not map the branch to the PR;
+`gh pr checkout <number>` puts you on a branch it can map.
 
 ## 3. A full run, in anger
 
@@ -142,6 +147,11 @@ Every stop names its route; nothing is ever posted or half-done:
 - **Not inside a clone.** Run it from the clone of your
   contribution's repo, on your branch: the branch is how it finds
   your PR.
+- **The clone has no remote for the repository the PR lives in.**
+  This is not a stop, it is a `NO PR YET` that is true about the
+  wrong repository, which is why the report names the repository gh
+  resolved. Fix it with `git remote add upstream <repo URL>`, then
+  run again.
 - **gh not logged in (or rate-limited).** The stop quotes what gh
   said; `gh auth status` shows it yourself, `gh auth login` fixes
   the common case, and a rate limit passes on its own. The monitor

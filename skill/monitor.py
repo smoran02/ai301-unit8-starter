@@ -110,7 +110,7 @@ FIRST_RUN_FEEDBACK_DAYS = 14
 # construction (gate answer 1): no write subcommand appears here, and
 # gh_read() refuses to run anything not on this list, so "the monitor
 # never posts" is enforced in code, not just promised in prose.
-READONLY_GH = {("auth", "status"), ("pr", "view")}
+READONLY_GH = {("auth", "status"), ("pr", "view"), ("repo", "view")}
 
 PR_FIELDS = ",".join([
     "number", "title", "url", "state", "isDraft", "author",
@@ -317,6 +317,20 @@ def load_form(name: str) -> str:
 
 _NO_PR_RE = re.compile(r"(?i)no pull requests found|no default branch|"
                        r"could not find any pull request")
+
+
+def resolved_repo(root: Path) -> str:
+    """The repository gh resolves from this clone's remotes, which is the
+    repository every `gh pr` call below reads. A no-PR answer that does
+    not name it is a true statement about a repository you may not have
+    meant to ask about."""
+    proc = gh_read("repo", "view", "--json", "nameWithOwner", cwd=root)
+    if proc.returncode != 0:
+        return "(gh resolved no repository from this clone's remotes)"
+    try:
+        return json.loads(proc.stdout).get("nameWithOwner") or "(unknown)"
+    except json.JSONDecodeError:
+        return "(unknown)"
 
 
 def gather_state(root: Path, branch: str) -> dict | None:
@@ -631,13 +645,21 @@ def move_from_draft(drafted: str, form_name: str) -> str:
 def state_report(root: Path, branch: str, pr: dict | None,
                  state: str, line: str, notes: list[str]) -> str:
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    out = [f"# PR-monitor run report ({stamp})", ""]
+    utc = datetime.datetime.now(datetime.timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
+    # The heading keeps local time so it lines up with monitor-log.md; the
+    # run line carries the zoned instant, so every time in this report can
+    # be compared with the zoned times GitHub returns.
+    out = [f"# PR-monitor run report ({stamp})", "",
+           f"- run at: {utc}"]
     if pr is None:
+        repo = resolved_repo(root)
         out += [
             f"- clone: {root}",
+            f"- repository gh resolved from this clone: {repo}",
             f"- branch: {branch}",
             "- state: NO PR YET (no pull request found for this "
-            "branch)",
+            f"branch in {repo})",
             "",
             "An honest state, and its move is already written: your "
             "ship-gate's latest report is your next-step list, "
@@ -645,9 +667,14 @@ def state_report(root: Path, branch: str, pr: dict | None,
             "nothing to watch until the gate passes and you open the "
             "PR; nothing here is behind.",
             "",
-            "Know your PR exists? Then gh could not map this branch "
-            "to it: `gh pr checkout <number>` from your clone puts "
-            "you on a branch it can map; run again from there.",
+            "Know your PR exists? Then read the repository line "
+            "above first: gh resolves it from this clone's remotes, "
+            "so a clone of your fork looks for the PR in the fork, "
+            "where it does not live. Add the repository the PR "
+            "targets as a remote (`git remote add upstream <repo "
+            "URL>`) and run again. If the repository is right, gh "
+            "could not map this branch to the PR: `gh pr checkout "
+            "<number>` puts you on a branch it can map.",
         ]
         return "\n".join(out) + "\n"
     checks_line, _, _, _ = summarize_checks(pr.get("statusCheckRollup"))
@@ -656,9 +683,14 @@ def state_report(root: Path, branch: str, pr: dict | None,
         f"- PR: {pr.get('url', '?')} ({pr.get('title', '')!r})",
         f"- branch: {pr.get('headRefName', branch)} -> "
         f"{pr.get('baseRefName', '?')}",
-        f"- opened: {fmt_days(days_ago(pr.get('createdAt', '')))} ago; "
-        f"last activity {fmt_days(days_ago(pr.get('updatedAt', '')))} "
-        "ago",
+        # Absolute times as well as relative ones. A threshold question
+        # ("when would fourteen days of silence be up?") cannot be
+        # answered from "under a day ago", and a drafting pass asked for
+        # a date it was never given will supply one.
+        f"- opened: {pr.get('createdAt', '') or '?'} "
+        f"({fmt_days(days_ago(pr.get('createdAt', '')))} ago)",
+        f"- last activity: {pr.get('updatedAt', '') or '?'} "
+        f"({fmt_days(days_ago(pr.get('updatedAt', '')))} ago)",
         f"- checks: {checks_line}",
         f"- mergeable: {pr.get('mergeable', 'UNKNOWN')} "
         f"(merge state {pr.get('mergeStateStatus', 'UNKNOWN')})",
